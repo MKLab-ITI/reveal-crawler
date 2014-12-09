@@ -7,16 +7,22 @@ import com.google.common.hash.Hashing;
 import gr.iti.mklab.image.Utils;
 import gr.iti.mklab.image.VisualIndexer;
 import gr.iti.mklab.simmo.items.Image;
+import gr.iti.mklab.visual.utilities.ImageIOGreyScale;
 import it.unimi.di.law.bubing.parser.BinaryParser;
 import it.unimi.di.law.bubing.parser.Parser;
 import it.unimi.di.law.warc.filters.Filter;
 import it.unimi.di.law.warc.filters.URIResponse;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
@@ -26,7 +32,9 @@ import java.util.Date;
 /**
  * Created by kandreadou on 4/16/14.
  */
-public class ImageParser implements Parser {
+public class ImageParser<T> implements Parser<T> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ImageParser.class);
 
     SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
     private final HashFunction hashFunction;
@@ -66,6 +74,7 @@ public class ImageParser implements Parser {
 
     @Override
     public byte[] parse(final URI uri, final HttpResponse httpResponse, final LinkReceiver linkReceiver) throws IOException {
+        System.out.println("ImageParser " + uri);
         if (hashFunction == null) return null;
         String imageUrl = uri.toString();
         final Hasher hasher = hashFunction.newHasher();
@@ -76,54 +85,37 @@ public class ImageParser implements Parser {
         String contentType = httpResponse.getEntity().getContentType().getValue();
         long clength = httpResponse.getEntity().getContentLength();
         if (Utils.checkContentHeaders((int) clength, contentType)) {
-            BufferedImage image = ImageIO.read(is);
+            BufferedImage image = null;
+            try {
+                image = ImageIO.read(is);
+            } catch (IllegalArgumentException e) {
+                // this exception is probably thrown because of a greyscale jpeg image
+                System.out.println("Exception: " + e.getMessage() + " | Image: " + imageUrl);
+                image = ImageIOGreyScale.read(is); // retry with the modified class
+            } catch (MalformedURLException e) {
+                System.out.println("Malformed url exception. Url: " + imageUrl);
+            }
 
             if (Utils.checkImage(image)) {
 
+                ObjectId objectId = new ObjectId();
                 Image item = new Image();
+                item.setObjectId(objectId);
                 item.setUrl(imageUrl);
                 item.setWidth(image.getWidth());
                 item.setHeight(image.getHeight());
-                //TODO: add setPageUrl method and setId method
-                item.setDescription(uri.toString());
+                item.setWebPageUrl(uri.toString());
                 String lastModified = httpResponse.getFirstHeader("Last-Modified").getValue();
                 try {
                     item.setLastModifiedDate(sdf.parse(lastModified));
                 } catch (java.text.ParseException e) {
-                    //do nothing
+                    System.out.println("Date parse exception: " + e);
                 }
-
-                if (VisualIndexer.getInstance().index(imageUrl)) {
-                    ///indexedImgs.add(id);
-                    //TODO: store in the DB
-                }
-
-                /*MediaItem item = new MediaItem(new URL(imageUrl));
-                item.setUrl(imageUrl);
-                item.setSize(image.getWidth(), image.getHeight());
-                item.setId(code.toString());
-                //item.setId(imageUrl);
-                String lastModified = httpResponse.getFirstHeader("Last-Modified").getValue();
-                try {
-                    item.setPublicationTime(sdf.parse(lastModified).getTime());
-                } catch (java.text.ParseException e) {
-                    //do nothing
-                }
-                ImageProcessor.getInstance().indexImage(item, image);*/
+                VisualIndexer.getInstance().indexAndStore(image, item);
             }
         }
         //for (int length; (length = is.read(buffer, 0, buffer.length)) > 0; ) hasher.putBytes(buffer, 0, length);
         return code.asBytes();
-    }
-
-    @Override
-    public boolean apply(URIResponse response) {
-        return true;
-    }
-
-    @Override
-    public Object clone() {
-        return new BinaryParser(hashFunction);
     }
 
     @Override
@@ -132,7 +124,23 @@ public class ImageParser implements Parser {
     }
 
     @Override
-    public Filter<URIResponse> copy() {
-        return new BinaryParser(hashFunction);
+    public ImageParser<T> clone() {
+        return new ImageParser<T>(hashFunction == null ? null : hashFunction);
+    }
+
+    @Override
+    public ImageParser<T> copy() {
+        return clone();
+    }
+
+    @Override
+    public T result() {
+        return null;
+    }
+
+    @Override
+    public boolean apply(final URIResponse uriResponse) {
+        final Header contentType = uriResponse.response().getEntity().getContentType();
+        return contentType != null && contentType.getValue().startsWith("image/");
     }
 }

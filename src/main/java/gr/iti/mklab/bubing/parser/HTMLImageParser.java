@@ -6,6 +6,7 @@ import gr.iti.mklab.image.Utils;
 import gr.iti.mklab.image.VisualIndexer;
 import gr.iti.mklab.simmo.items.Image;
 import it.unimi.di.law.bubing.parser.BinaryParser;
+import it.unimi.di.law.bubing.parser.HTMLParser;
 import it.unimi.di.law.bubing.util.BURL;
 import it.unimi.dsi.fastutil.io.InspectableFileCachedInputStream;
 import net.htmlparser.jericho.StreamedSource;
@@ -21,6 +22,7 @@ import net.htmlparser.jericho.HTMLElementName;
 import net.htmlparser.jericho.Segment;
 import net.htmlparser.jericho.StartTag;
 import net.htmlparser.jericho.StartTagType;
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,21 +53,18 @@ public class HTMLImageParser extends HTMLParser {
     private List<String> indexedImgs;
 
     public HTMLImageParser(final String messageDigest) throws NoSuchAlgorithmException {
+
         this(BinaryParser.forName(messageDigest));
     }
 
     public HTMLImageParser(final HashFunction hashFunction) {
         super(hashFunction);
-        this.hashFunction = hashFunction;
-    }
-
-    public HTMLImageParser(HashFunction hashFunction, boolean crossAuthorityDuplicates, int bufferSize) {
-        super(hashFunction, crossAuthorityDuplicates, bufferSize);
         this.indexedImgs = new ArrayList<String>();
         this.hashFunction = hashFunction;
     }
 
     public void processImageURL(URI uri, URI base, StartTag startTag) throws MalformedURLException, IOException {
+        System.out.println("processImageURL " + uri);
         String imgSrc = startTag.getAttributeValue("src");
         String altTxt = startTag.getAttributeValue("alt");
 
@@ -89,12 +88,11 @@ public class HTMLImageParser extends HTMLParser {
                         item.setTitle(altTxt);
                         item.setWidth(image.getWidth());
                         item.setHeight(image.getHeight());
-                        //TODO: add setPageUrl method and setId method
-                        item.setDescription(uri.toString());
+                        item.setWebPageUrl(uri.toString());
                         item.setLastModifiedDate(new Date(con.getLastModified()));
-                        //item.setId(id);
+                        item.setObjectId(new ObjectId());
 
-                        if (VisualIndexer.getInstance().index(resolved.toString())) {
+                        if (VisualIndexer.getInstance().index(item)) {
                             indexedImgs.add(id);
                             //TODO: store in the DB
                         }
@@ -106,6 +104,7 @@ public class HTMLImageParser extends HTMLParser {
 
     @Override
     public byte[] parse(final URI uri, final HttpResponse httpResponse, final LinkReceiver linkReceiver) throws IOException {
+        System.out.println("parser " + uri);
         guessedCharset = "ISO-8859-1";
 
         final HttpEntity entity = httpResponse.getEntity();
@@ -254,11 +253,11 @@ public class HTMLImageParser extends HTMLParser {
             }
         }
 
-        if (DigestAppendable.DEBUG)
+        /*if (DigestAppendable.DEBUG)
             if (digestAppendable != null) {
                 System.err.println("Closing " + digestAppendable.debugFile + " for " + uri);
                 digestAppendable.debugStream.close();
-            }
+            }*/
 
         return digestAppendable != null ? digestAppendable.digest() : null;
     }
