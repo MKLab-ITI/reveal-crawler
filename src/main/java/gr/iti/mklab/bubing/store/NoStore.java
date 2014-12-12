@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * Created by kandreadou on 12/1/14.
+ * Does not store anything.
+ *
+ * @author Katerina Andreadou
  */
 public class NoStore implements Closeable, Store {
 

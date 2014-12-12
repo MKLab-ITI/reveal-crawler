@@ -8,14 +8,16 @@ import it.unimi.di.law.bubing.Agent;
 import java.nio.charset.Charset;
 
 /**
- * Created by kandreadou on 12/9/14.
+ * An ItiAgent which initializes the VisualIndexer before starting the BUbiNG Agent
+ *
+ * @author Katerina Andreadou
  */
 public class ItiAgent {
 
     public final static BloomFilter<String> UNIQUE_IMAGE_URLS = BloomFilter.create(Funnels.stringFunnel(Charset.forName("UTF-8")), 100000);
 
 
-    public static void main( final String arg[] ) throws Exception {
+    public static void main(final String arg[]) throws Exception {
         VisualIndexer.getInstance();
         Agent.main(arg);
     }

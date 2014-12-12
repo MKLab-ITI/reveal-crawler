@@ -26,7 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * Created by kandreadou on 12/1/14.
+ * @author Katerina Andreadou
  */
 public class VisualIndexer {
 

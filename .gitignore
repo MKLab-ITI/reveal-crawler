@@ -16,6 +16,7 @@ artifacts/
 # Maven
 log/
 target/
+crawl/
 
 #BUbiNG
 gc.log

@@ -5,7 +5,9 @@ import java.net.URI;
 import java.util.regex.Pattern;
 
 /**
- * Created by kandreadou on 12/1/14.
+ * Simple Image Utils
+ *
+ * @author Katerina Andreadou
  */
 public class Utils {
 

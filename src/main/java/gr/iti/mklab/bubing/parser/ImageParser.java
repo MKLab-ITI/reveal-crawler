@@ -31,7 +31,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Created by kandreadou on 4/16/14.
+ * An ImageParser for parsing ContentType image/* documents.
+ *
+ * @author Katerina Andreadou
  */
 public class ImageParser<T> implements Parser<T> {
 

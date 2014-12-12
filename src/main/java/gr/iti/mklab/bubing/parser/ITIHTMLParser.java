@@ -103,10 +103,11 @@ import javax.imageio.ImageIO;
 // RELEASE-STATUS: DIST
 
 /**
- * An HTML parser with additional responsibilities.
- * An instance of this class does some buffering that makes it possible to
- * parse quickly a {@link HttpResponse}. Instances are heavyweight&mdash;they
- * should be pooled and shared, since their usage is transitory and CPU-intensive.
+ * An ITI HTMLParser. This is a copy of {@link it.unimi.di.law.bubing.parser.HTMLParser}
+ * with some changes to add image parsing. Parse and process are the changed methods.
+ * Simply extending the original class was not enough, hence this not so "clean" solution
+ *
+ * @author Katerina Andreadou
  */
 public class ITIHTMLParser<T> implements Parser<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ITIHTMLParser.class);
@@ -476,6 +477,17 @@ public class ITIHTMLParser<T> implements Parser<T> {
             linkReceiver.link(base.resolve(url));
     }
 
+    /**
+     * Checks if an image URI is valid and if it is, it downloads the image,
+     * performs feature extraction, indexes and stores the metadata in a MongoDB.
+     *
+     * @param pageUri,  the page URI
+     * @param base,     the base URI
+     * @param imageUri, the image URI
+     * @param altText,  the alt text or any text extracted from the html tag
+     * @throws MalformedURLException
+     * @throws IOException
+     */
     public void processImageURL(URI pageUri, URI base, String imageUri, String altText) throws MalformedURLException, IOException {
 
         URI url = BURL.parse(imageUri);
@@ -483,7 +495,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
             URI resolved = base.resolve(url);
             String resolvedStr = resolved.toString();
             //avoid trying to index the same image multiple times
-            if(!ItiAgent.UNIQUE_IMAGE_URLS.mightContain(resolvedStr)){
+            if (!ItiAgent.UNIQUE_IMAGE_URLS.mightContain(resolvedStr)) {
                 // Put it in the bloom filter even if it is not saved eventually
                 // to avoid doing the same checks for the same image a second time
                 ItiAgent.UNIQUE_IMAGE_URLS.put(resolvedStr);
@@ -618,10 +630,9 @@ public class ITIHTMLParser<T> implements Parser<T> {
                     // IFRAME or FRAME + SRC
                     if (name == HTMLElementName.IFRAME || name == HTMLElementName.FRAME || name == HTMLElementName.EMBED)
                         process(linkReceiver, base, startTag.getAttributeValue("src"), startTag.getAttributeValue("name"), true);
-                    else if (name == HTMLElementName.IMG){
+                    else if (name == HTMLElementName.IMG) {
                         processImageURL(uri, base, startTag.getAttributeValue("src"), startTag.getAttributeValue("alt"));
-                    }
-                    else if (name == HTMLElementName.SCRIPT)
+                    } else if (name == HTMLElementName.SCRIPT)
                         process(linkReceiver, base, startTag.getAttributeValue("src"), null, false);
                     else if (name == HTMLElementName.OBJECT)
                         process(linkReceiver, base, startTag.getAttributeValue("data"), startTag.getAttributeValue("name"), true);
