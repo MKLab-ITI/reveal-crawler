@@ -116,7 +116,7 @@ public class ImageParser<T> implements Parser<T> {
                     //ignore. last modified will simply not be set
                 }
                 try {
-                    VisualIndexer.getInstance().indexAndStore(image, item);
+                    VisualIndexer.indexAndStore(image, item);
                 } catch (Exception e) {
                     System.out.println("ImageParser parse exeption: " + e);
                 }

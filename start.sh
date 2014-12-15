@@ -7,6 +7,6 @@ java    -server -Xss256K -Xms23G -Xmx23G -XX:+UseNUMA -XX:+UseConcMarkSweepGC  \
         -Djava.net.preferIPv4Stack=true \
         -Djgroups.bind_addr=127.0.0.1 \
         -Dlogback.configurationFile=bubing-logback.xml \
-        -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false \
+        -Dcom.sun.management.jmxremote.port=9995 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false \
         -cp target/reveal-crawler-1.0-SNAPSHOT-jar-with-dependencies.jar  gr.iti.mklab.bubing.ItiAgent \
-        -h 127.0.0.1 -P reveal.properties -g eu agent -n 2>err >out
+        -h 127.0.0.1 -r rootCrawl -P reveal.properties -g eu agent -n 2>err >out

@@ -199,7 +199,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.sample.App</mainClass>
+                            <mainClass>gr.iti.mklab.bubing.ItiAgent</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

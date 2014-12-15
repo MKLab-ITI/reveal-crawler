@@ -30,11 +30,11 @@ import java.net.URL;
  */
 public class VisualIndexer {
 
-    private MediaDAO<Image> imageDAO;
+    private static MediaDAO<Image> imageDAO;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VisualIndexer.class);
     private final static String LEARNING_FOLDER = "/home/kandreadou/webservice/learning_files/";
-    private final static String INDEX_FOLDER = "/home/kandreadou/webservice/reveal_indices/bubing/";
+    private final static String INDEX_FOLDER = "/home/kandreadou/webservice/reveal_indices/";
 
     /**
      * The value to use in HttpURLConnection.setConnectTimeout()
@@ -51,16 +51,16 @@ public class VisualIndexer {
     private static int targetLengthMax = 1024;
     private static int maxNumPixels = 768 * 512;
 
-    public static synchronized VisualIndexer getInstance() {
+    public static synchronized VisualIndexer createInstance(String name) {
         if (uniqueInstance == null)
-            uniqueInstance = new VisualIndexer();
+            uniqueInstance = new VisualIndexer(name);
         return uniqueInstance;
     }
 
-    private VisualIndexer() {
+    private VisualIndexer(String name) {
         try {
-            initialize();
-            MorphiaManager.setup("test");
+            initialize(name);
+            MorphiaManager.setup(name);
             imageDAO = new MediaDAO<Image>(Image.class);
         } catch (Exception ex) {
             LOGGER.error("Error creating VisualIndexer " + ex);
@@ -78,7 +78,7 @@ public class VisualIndexer {
 
     }
 
-    public void indexAndStore(BufferedImage im, Image obj) throws Exception {
+    public static void indexAndStore(BufferedImage im, Image obj) throws Exception {
         ImageVectorization imvec = new ImageVectorization(obj.getObjectId().toString(), im, targetLengthMax, maxNumPixels);
         ImageVectorizationResult result = imvec.call();
         if (StringUtils.isEmpty(result.getExceptionMessage())) {
@@ -134,7 +134,7 @@ public class VisualIndexer {
         return image;
     }
 
-    private void initialize() throws Exception {
+    private void initialize(String name) throws Exception {
         int[] numCentroids = {128, 128, 128, 128};
         int initialLength = numCentroids.length * numCentroids[0] * AbstractFeatureExtractor.SURFLength;
 
@@ -160,7 +160,7 @@ public class VisualIndexer {
         int numCoarseCentroids = 8192;
         String coarseQuantizerFile2 = LEARNING_FOLDER + "qcoarse_1024d_8192k.csv";
         String productQuantizerFile2 = LEARNING_FOLDER + "pq_1024_64x8_rp_ivf_8192k.csv";
-        index = new IVFPQ(targetLengthMax, maximumNumVectors, false, INDEX_FOLDER, m2, k_c, PQ.TransformationType.RandomPermutation, numCoarseCentroids, true, 0);
+        index = new IVFPQ(targetLengthMax, maximumNumVectors, false, INDEX_FOLDER+name+'/', m2, k_c, PQ.TransformationType.RandomPermutation, numCoarseCentroids, true, 0);
         index.loadCoarseQuantizer(coarseQuantizerFile2);
         index.loadProductQuantizer(productQuantizerFile2);
         int w = 64; // larger values will improve results/increase seach time

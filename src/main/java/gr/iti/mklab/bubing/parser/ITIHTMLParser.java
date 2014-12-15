@@ -529,7 +529,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
                         item.setObjectId(new ObjectId());
 
                         try {
-                            VisualIndexer.getInstance().indexAndStore(image, item);
+                            VisualIndexer.indexAndStore(image, item);
                         } catch (Exception e) {
                             System.out.println("HTMLImageParser parse exeption: " + e);
                         }
