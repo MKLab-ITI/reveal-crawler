@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!--<appender name="all" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="all" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d %r %p [%t] %logger{1} - %m%n</pattern>
         </encoder>
-    </appender>-->
-    <appender name="all" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    </appender>
+    <!--<appender name="all" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>/tmp/bubing.log</file>
         <encoder>
             <pattern>%d %r %p [%t] %logger{1} - %m%n</pattern>
@@ -14,7 +14,7 @@
             <maxHistory>100</maxHistory>
             <FileNamePattern>/tmp/bubing.%d{yyyy-MM-dd_HH}.log</FileNamePattern>
         </rollingPolicy>
-    </appender>
+    </appender>-->
     <appender name="warn" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>/tmp/bubing.warn</file>
         <encoder>
