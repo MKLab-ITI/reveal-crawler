@@ -17,6 +17,7 @@ import org.mongodb.morphia.dao.BasicDAO;
 
 import java.net.InetAddress;
 import java.nio.charset.Charset;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -32,27 +33,14 @@ public class ItiAgent {
     public static void main(final String arg[]) throws Exception {
         MorphiaManager.setup(CrawlQueueController.DB_NAME);
         DAO<CrawlRequest, ObjectId> dao = new BasicDAO<CrawlRequest, ObjectId>(CrawlRequest.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), MorphiaManager.getDB().getName());
-        List<CrawlRequest> waitingRequests = dao.getDatastore().find(CrawlRequest.class).filter("requestState", CrawlRequest.STATE.WAITING).order("-creationDate").asList();
+        List<CrawlRequest> waitingRequests = dao.getDatastore().find(CrawlRequest.class).filter("requestState", CrawlRequest.STATE.WAITING).order("creationDate").asList();
         if (waitingRequests.size() == 0) {
             System.out.println("No waiting requests in queue");
             return;
         } else {
             CrawlRequest req = waitingRequests.get(0);
-            req.requestState = CrawlRequest.STATE.RUNNING;
-            dao.save(req);
-            MorphiaManager.tearDown();
-
-
-            //int portNumber = req.portNumber;
             String crawlPath = req.crawlDataPath;
             String collection = req.collectionName;
-            //Properties p = System.getProperties();
-            //p.setProperty(JMX_REMOTE_PORT_SYSTEM_PROPERTY, String.valueOf(portNumber));
-            //System.setProperty("java.rmi.server.hostname", "127.0.0.1" );
-            //System.setProperty("com.sun.management.jmxremote", "true" );
-            //System.setProperty("com.sun.management.jmxremote.authenticate", "false" );
-            //System.setProperty("com.sun.management.jmxremote.ssl", "false" );
-            //System.setProperty("com.sun.management.jmxremote.port", "9999"  );
 
             SimpleJSAP jsap = new SimpleJSAP(Agent.class.getName(), "Starts a BUbiNG agent (note that you must enable JMX by means of the standard Java system properties).",
                     new Parameter[]{
@@ -79,7 +67,12 @@ public class ItiAgent {
             final String host = jsapResult.getString("jmxHost");
             final int port = Integer.parseInt(portProperty);
             final String rootDir = jsapResult.getString("rootDir");
-            System.out.println("RootDir " + rootDir);
+
+            req.requestState = CrawlRequest.STATE.RUNNING;
+            req.lastStateChange = new Date();
+            req.portNumber = port;
+            System.out.println("ItiAgent port number "+port);
+            dao.save(req);
 
             BaseConfiguration additional = new BaseConfiguration();
             additional.addProperty("name", name);
@@ -91,6 +84,10 @@ public class ItiAgent {
             additional.addProperty("rootDir", crawlPath);
             VisualIndexer.createInstance(collection);
             new Agent(host, port, new RuntimeConfiguration(new StartupConfiguration(jsapResult.getString("properties"), additional)));
+            req.requestState = CrawlRequest.STATE.FINISHED;
+            req.lastStateChange = new Date();
+            dao.save(req);
+            MorphiaManager.tearDown();
             System.exit(0); // Kills remaining FetchingThread instances, if any.
         }
     }

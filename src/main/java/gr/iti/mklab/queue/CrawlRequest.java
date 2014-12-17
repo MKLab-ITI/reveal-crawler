@@ -15,7 +15,7 @@ import java.util.Date;
 public class CrawlRequest {
 
     public enum STATE {
-        WAITING, PAUSED, RUNNING, FAILED
+        WAITING, PENDING, PAUSED, RUNNING, FINISHED
     }
 
     /**

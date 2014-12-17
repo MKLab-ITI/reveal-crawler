@@ -22,10 +22,10 @@ public class QueueTest {
     }
 
     public void start(){
-        controller.submit(9999, "omg", "omg!!");
+        controller.submit("refactor", "refactor");
     }
 
     public void stop(){
-        controller.cancel(9999);
+        controller.cancel(9995);
     }
 }
