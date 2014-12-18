@@ -9,23 +9,13 @@ import org.junit.Test;
  */
 public class QueueTest {
 
-    private CrawlQueueController controller;
-
-    @Before
-    public void setup() {
-        controller = new CrawlQueueController();
-    }
-
-    @Test
-    public void test(){
-        stop();
-    }
-
-    public void start(){
-        controller.submit("refactor", "refactor");
-    }
-
-    public void stop(){
-        controller.cancel(9995);
+    public static void main(String[] args) throws Exception {
+        CrawlQueueController controller = new CrawlQueueController();
+        controller.submit("crawltest1", "crawltest1");
+        controller.submit("crawltest2", "crawltest2");
+        Thread.sleep(50000);
+        controller.submit("crawltest3", "crawltest3");
+        controller.submit("crawltest4", "crawltest4");
+        //controller.cancel(9995);
     }
 }
