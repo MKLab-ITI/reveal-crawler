@@ -33,8 +33,14 @@ public class VisualIndexer {
     private static MediaDAO<Image> imageDAO;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VisualIndexer.class);
-    private final static String LEARNING_FOLDER = "/home/kandreadou/webservice/learning_files/";
-    private final static String INDEX_FOLDER = "/home/kandreadou/webservice/reveal_indices/";
+
+    //Local configuration
+    //private final static String LEARNING_FOLDER = "/home/kandreadou/webservice/learning_files/";
+    //private final static String INDEX_FOLDER = "/home/kandreadou/webservice/reveal_indices/";
+
+    //Server configuration
+    private final static String LEARNING_FOLDER = "/home/iti-310/VisualIndex/learning_files/";
+    private final static String INDEX_FOLDER = "/home/iti-310/VisualIndex/data/";
 
     /**
      * The value to use in HttpURLConnection.setConnectTimeout()

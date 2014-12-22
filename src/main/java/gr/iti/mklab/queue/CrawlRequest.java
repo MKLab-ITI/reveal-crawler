@@ -53,6 +53,6 @@ public class CrawlRequest {
 
     /** The request's unique id */
     @Id
-    public ObjectId id;
+    public String id = new ObjectId().toString();
 
 }

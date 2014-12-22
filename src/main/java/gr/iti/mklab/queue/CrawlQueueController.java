@@ -12,7 +12,6 @@ import javax.management.remote.JMXServiceURL;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
-import java.rmi.registry.LocateRegistry;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -31,7 +30,7 @@ public class CrawlQueueController {
     /**
      * The number of AVAILABLE_PORTS defines the number of simultaneously running BUbiNG Agents
      */
-    private final static Integer[] AVAILABLE_PORTS = {9995};
+    private final static Integer[] AVAILABLE_PORTS = {9995, 9997, 9999};
 
     public CrawlQueueController() {
         // Sets up the Morphia Manager
