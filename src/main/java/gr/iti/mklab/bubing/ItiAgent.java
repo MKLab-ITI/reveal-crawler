@@ -3,6 +3,7 @@ package gr.iti.mklab.bubing;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.martiansoftware.jsap.*;
+import gr.iti.mklab.bubing.parser.ITIHTMLParser;
 import gr.iti.mklab.image.VisualIndexer;
 import gr.iti.mklab.queue.CrawlQueueController;
 import gr.iti.mklab.queue.CrawlRequest;
@@ -30,6 +31,7 @@ public class ItiAgent {
     public final static BloomFilter<String> UNIQUE_IMAGE_URLS = BloomFilter.create(Funnels.stringFunnel(Charset.forName("UTF-8")), 100000);
     public static final String JMX_REMOTE_PORT_SYSTEM_PROPERTY = "com.sun.management.jmxremote.port";
 
+
     public static void main(final String arg[]) throws Exception {
         MorphiaManager.setup(CrawlQueueController.DB_NAME);
         DAO<CrawlRequest, ObjectId> dao = new BasicDAO<CrawlRequest, ObjectId>(CrawlRequest.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), MorphiaManager.getDB().getName());
@@ -38,7 +40,11 @@ public class ItiAgent {
             System.out.println("No waiting requests in queue");
             return;
         } else {
+            System.out.println("Keywords in request");
             CrawlRequest req = waitingRequests.get(0);
+            for(String k:req.keywords){
+                System.out.println(k);
+            }
             String crawlPath = req.crawlDataPath;
             String collection = req.collectionName;
 
@@ -82,6 +88,7 @@ public class ItiAgent {
             //if (jsapResult.userSpecified("rootDir")) additional.addProperty("rootDir", rootDir);
             //NOTE: This is new
             additional.addProperty("rootDir", crawlPath);
+            ITIHTMLParser.keywords = req.keywords;
             VisualIndexer.createInstance(collection);
             new Agent(host, port, new RuntimeConfiguration(new StartupConfiguration(jsapResult.getString("properties"), additional)));
             req.requestState = CrawlRequest.STATE.FINISHED;

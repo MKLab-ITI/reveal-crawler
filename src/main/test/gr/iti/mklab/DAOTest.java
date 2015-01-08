@@ -29,7 +29,7 @@ public class DAOTest {
 
     @After
     public void tearDown() {
-        MorphiaManager.getMongoClient().dropDatabase(DB_NAME);
+        //MorphiaManager.getMongoClient().dropDatabase(DB_NAME);
         MorphiaManager.tearDown();
     }
 
@@ -47,6 +47,8 @@ public class DAOTest {
         r.lastStateChange = new Date();
         r.portNumber = 9999;
         r.requestState = CrawlRequest.STATE.PAUSED;
+        r.keywords.add("airplane");
+        r.keywords.add("my keyword");
         crawlDAO.save(r);
         CrawlRequest r2 = crawlDAO.findOne("collectionName", r.collectionName);
         System.out.println(MorphiaManager.getMorphia().toDBObject(r2));

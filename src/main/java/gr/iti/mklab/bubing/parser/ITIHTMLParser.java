@@ -56,10 +56,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,7 +71,9 @@ import net.htmlparser.jericho.StartTagType;
 import net.htmlparser.jericho.StreamedSource;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -82,6 +81,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,6 +111,8 @@ import javax.imageio.ImageIO;
  */
 public class ITIHTMLParser<T> implements Parser<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ITIHTMLParser.class);
+
+    public static Set<String> keywords = new HashSet<String>();
 
     static {
         /* As suggested by Martin Jericho. This should speed up things and avoid problems with
@@ -545,6 +547,17 @@ public class ITIHTMLParser<T> implements Parser<T> {
         guessedCharset = "ISO-8859-1";
 
         final HttpEntity entity = httpResponse.getEntity();
+
+        boolean keywordFound = false;
+        String htmlText = EntityUtils.toString(entity);
+        //LOGGER.info("Keywords "+ ArrayUtils.toString(keywords.toArray()));
+        for (String keyword:keywords){
+            keywordFound |= htmlText.contains(keyword);
+        }
+        if(!keywordFound){
+            //LOGGER.info("*******************************Page "+uri.toString()+"does not contain keyword");
+            return null;
+        }
 
         // TODO: check if it will make sense to use getValue() of entity
         // Try to guess using headers

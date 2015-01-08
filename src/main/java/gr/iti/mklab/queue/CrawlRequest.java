@@ -5,17 +5,19 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A CrawlRequest class for storing the queue state to MongoDB
  *
  * @author kandreadou
  */
-@Entity
+@Entity(noClassnameStored = true)
 public class CrawlRequest {
 
     public enum STATE {
-        WAITING, PENDING, PAUSED, RUNNING, FINISHED
+        WAITING, STOPPING, PAUSED, RUNNING, FINISHED
     }
 
     /**
@@ -51,8 +53,21 @@ public class CrawlRequest {
      */
     public String collectionName;
 
-    /** The request's unique id */
+    /**
+     * The number of crawled images
+     */
+    public int numImages;
+
+    /**
+     * A list of keywords to focus the crawl on
+     */
+    public Set<String> keywords = new HashSet<String>();
+
+    /**
+     * The request's unique id
+     */
     @Id
     public String id = new ObjectId().toString();
 
 }
+

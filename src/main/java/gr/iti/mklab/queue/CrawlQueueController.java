@@ -1,28 +1,32 @@
 package gr.iti.mklab.queue;
 
+import gr.iti.mklab.simmo.items.Image;
 import gr.iti.mklab.simmo.morphia.MorphiaManager;
 import org.bson.types.ObjectId;
+import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.dao.BasicDAO;
 import org.mongodb.morphia.dao.DAO;
 
-import javax.management.*;
+import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
- * The CrawlQueueController persists submitted crawl requests in a MongoDB,
- * polls in regular intervals and starts a new BUbiNG Agent if there are slots available
- *
- * @author Katerina Andreadou
+ * Created by kandreadou on 12/18/14.
  */
 public class CrawlQueueController {
-
     public static final String DB_NAME = "crawlerQUEUE";
     private DAO<CrawlRequest, ObjectId> dao;
     private Poller poller;
@@ -53,10 +57,33 @@ public class CrawlQueueController {
      * @param crawlDir
      * @param collectionName
      */
-    public synchronized void submit(String crawlDir, String collectionName) {
+    public synchronized CrawlRequest submit(String crawlDir, String collectionName, String... keywords) {
         System.out.println("submit event");
-        enqueue(crawlDir, collectionName);
+        CrawlRequest r = enqueue(crawlDir, collectionName, keywords);
         tryLaunch();
+        return r;
+    }
+
+    public synchronized CrawlRequest cancel(String id) {
+        CrawlRequest req = getCrawlRequest(id).get(0);
+        req.requestState = CrawlRequest.STATE.STOPPING;
+        dao.save(req);
+        cancelForPort(req.portNumber);
+        return req;
+    }
+
+    public synchronized CrawlRequest getStatus(String id) {
+        CrawlRequest req = getCrawlRequest(id).get(0);
+        DAO<Image, ObjectId> images = new BasicDAO<Image, ObjectId>(Image.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), req.collectionName);
+        req.numImages = (int) images.count();
+        dao.save(req);
+        return req;
+    }
+
+    public List<Image> getImages(String id, int count, int offset) {
+        CrawlRequest req = getCrawlRequest(id).get(0);
+        Datastore ds = MorphiaManager.getMorphia().createDatastore(MorphiaManager.getMongoClient(), req.collectionName);
+        return ds.find(Image.class).offset(offset).limit(count).asList();
     }
 
     /**
@@ -64,7 +91,7 @@ public class CrawlQueueController {
      *
      * @param portNumber
      */
-    public void cancel(int portNumber) {
+    private void cancelForPort(int portNumber) {
         try {
             //JMXServiceURL jmxServiceURL = new JMXServiceURL("service:jmx:rmi://localhost/jndi/rmi://localhost:9999/jmxrmi");
             JMXServiceURL jmxServiceURL = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://127.0.0.1:" + portNumber + "/jmxrmi");
@@ -82,14 +109,17 @@ public class CrawlQueueController {
         }
     }
 
-    private void enqueue(String crawlDir, String collectionName) {
+    private CrawlRequest enqueue(String crawlDir, String collectionName, String... keywords) {
         CrawlRequest r = new CrawlRequest();
         r.collectionName = collectionName;
         r.requestState = CrawlRequest.STATE.WAITING;
         r.lastStateChange = new Date();
         r.creationDate = new Date();
         r.crawlDataPath = crawlDir;
+        for (String k : keywords)
+            r.keywords.add(k);
         dao.save(r);
+        return r;
     }
 
     private void tryLaunch() {
@@ -116,6 +146,9 @@ public class CrawlQueueController {
                 }
             }
         }
+        List<CrawlRequest> waitingList = getWaitingCrawls();
+        if(waitingList.isEmpty())
+            return;
         for (Integer i : ports) {
             System.out.println("Try launch crawl for port " + i);
             // Check if port is really available, if it is launch the respective script
@@ -128,12 +161,16 @@ public class CrawlQueueController {
     }
 
     private void launch(String scriptName) {
+
         try {
-            String[] command = {"/bin/bash", scriptName};
+            String path = "/home/kandreadou/mklab/reveal-media-crawler/" + scriptName;
+            String[] command = {path};
             ProcessBuilder p = new ProcessBuilder(command);
             Process pr = p.start();
+            inheritIO(pr.getInputStream(), System.out);
+            inheritIO(pr.getErrorStream(), System.err);
         } catch (IOException ioe) {
-            System.out.println("Problem starting process for scriptName " + scriptName);
+            System.out.println("Problem starting process for scriptName " + scriptName + " " + ioe);
         }
     }
 
@@ -148,7 +185,7 @@ public class CrawlQueueController {
         }
 
         public void startPolling() {
-            exec.scheduleAtFixedRate(this, 10, 20, TimeUnit.SECONDS);
+            exec.scheduleAtFixedRate(this, 10, 60, TimeUnit.SECONDS);
         }
 
         public void stopPolling() {
@@ -158,8 +195,16 @@ public class CrawlQueueController {
         }
     }
 
+    private List<CrawlRequest> getCrawlRequest(String id) {
+        return dao.getDatastore().find(CrawlRequest.class).filter("id", id).asList();
+    }
+
     private List<CrawlRequest> getRunningCrawls() {
         return dao.getDatastore().find(CrawlRequest.class).filter("requestState", CrawlRequest.STATE.RUNNING).asList();
+    }
+
+    private List<CrawlRequest> getWaitingCrawls() {
+        return dao.getDatastore().find(CrawlRequest.class).filter("requestState", CrawlRequest.STATE.WAITING).asList();
     }
 
     private boolean isPortAvailable(int port) {
@@ -188,5 +233,16 @@ public class CrawlQueueController {
         }
 
         return false;
+    }
+
+    private static void inheritIO(final InputStream src, final PrintStream dest) {
+        new Thread(new Runnable() {
+            public void run() {
+                Scanner sc = new Scanner(src);
+                while (sc.hasNextLine()) {
+                    dest.println(sc.nextLine());
+                }
+            }
+        }).start();
     }
 }
