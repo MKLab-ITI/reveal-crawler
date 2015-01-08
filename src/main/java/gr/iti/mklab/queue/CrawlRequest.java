@@ -64,6 +64,12 @@ public class CrawlRequest {
     public Set<String> keywords = new HashSet<String>();
 
     /**
+     * Will be this a new or an already existing crawl?
+     * By default start a new crawl
+     */
+    public boolean isNew = true;
+
+    /**
      * The request's unique id
      */
     @Id

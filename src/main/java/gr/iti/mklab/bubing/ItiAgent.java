@@ -84,7 +84,8 @@ public class ItiAgent {
             additional.addProperty("name", name);
             additional.addProperty("group", group);
             additional.addProperty("weight", Integer.toString(weight));
-            additional.addProperty("crawlIsNew", Boolean.valueOf(jsapResult.getBoolean("new")));
+            //additional.addProperty("crawlIsNew", Boolean.valueOf(jsapResult.getBoolean("new")));
+            additional.addProperty("crawlIsNew", req.isNew);
             //if (jsapResult.userSpecified("rootDir")) additional.addProperty("rootDir", rootDir);
             //NOTE: This is new
             additional.addProperty("rootDir", crawlPath);

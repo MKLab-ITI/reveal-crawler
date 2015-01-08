@@ -57,9 +57,9 @@ public class CrawlQueueController {
      * @param crawlDir
      * @param collectionName
      */
-    public synchronized CrawlRequest submit(String crawlDir, String collectionName, String... keywords) {
+    public synchronized CrawlRequest submit(boolean isNew, String crawlDir, String collectionName, String... keywords) {
         System.out.println("submit event");
-        CrawlRequest r = enqueue(crawlDir, collectionName, keywords);
+        CrawlRequest r = enqueue(isNew, crawlDir, collectionName, keywords);
         tryLaunch();
         return r;
     }
@@ -109,13 +109,14 @@ public class CrawlQueueController {
         }
     }
 
-    private CrawlRequest enqueue(String crawlDir, String collectionName, String... keywords) {
+    private CrawlRequest enqueue(boolean isNew, String crawlDir, String collectionName, String... keywords) {
         CrawlRequest r = new CrawlRequest();
         r.collectionName = collectionName;
         r.requestState = CrawlRequest.STATE.WAITING;
         r.lastStateChange = new Date();
         r.creationDate = new Date();
         r.crawlDataPath = crawlDir;
+        r.isNew = isNew;
         for (String k : keywords)
             r.keywords.add(k);
         dao.save(r);
