@@ -90,6 +90,7 @@ public class ItiAgent {
             //NOTE: This is new
             additional.addProperty("rootDir", crawlPath);
             ITIHTMLParser.keywords = req.keywords;
+            VisualIndexer.keywords = req.keywords;
             VisualIndexer.createInstance(collection);
             new Agent(host, port, new RuntimeConfiguration(new StartupConfiguration(jsapResult.getString("properties"), additional)));
             req.requestState = CrawlRequest.STATE.FINISHED;

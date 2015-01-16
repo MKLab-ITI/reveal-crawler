@@ -74,9 +74,9 @@ public class CrawlQueueController {
 
     public synchronized CrawlRequest getStatus(String id) {
         CrawlRequest req = getCrawlRequest(id).get(0);
-        DAO<Image, ObjectId> images = new BasicDAO<Image, ObjectId>(Image.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), req.collectionName);
-        req.numImages = (int) images.count();
-        dao.save(req);
+        //DAO<Image, ObjectId> images = new BasicDAO<Image, ObjectId>(Image.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), req.collectionName);
+        //req.numImages = (int) images.count();
+        //dao.save(req);
         return req;
     }
 

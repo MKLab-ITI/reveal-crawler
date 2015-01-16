@@ -1,6 +1,8 @@
 package gr.iti.mklab.image;
 
+import gr.iti.mklab.retrieve.YoutubeRetriever;
 import gr.iti.mklab.simmo.items.Image;
+import gr.iti.mklab.simmo.items.Video;
 import gr.iti.mklab.simmo.morphia.MediaDAO;
 import gr.iti.mklab.simmo.morphia.MorphiaManager;
 import gr.iti.mklab.visual.aggregation.AbstractFeatureAggregator;
@@ -24,6 +26,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Katerina Andreadou
@@ -57,6 +62,8 @@ public class VisualIndexer {
     private static int targetLengthMax = 1024;
     private static int maxNumPixels = 768 * 512;
 
+    public static Set<String> keywords = new HashSet<String>();
+
     public static synchronized VisualIndexer createInstance(String name) {
         if (uniqueInstance == null)
             uniqueInstance = new VisualIndexer(name);
@@ -68,9 +75,18 @@ public class VisualIndexer {
             initialize(name);
             MorphiaManager.setup(name);
             imageDAO = new MediaDAO<Image>(Image.class);
+            retrieveVideos();
         } catch (Exception ex) {
             LOGGER.error("Error creating VisualIndexer " + ex);
         }
+    }
+
+    private void retrieveVideos(){
+        YoutubeRetriever r = new YoutubeRetriever();
+        List<Video> results = r.retrieveKeywordsFeeds(keywords);
+        MediaDAO<Video> dao = new MediaDAO<Video>(Video.class);
+        for (Video v : results)
+            dao.save(v);
     }
 
     public void downloadIndexAndStore(Image item) {
