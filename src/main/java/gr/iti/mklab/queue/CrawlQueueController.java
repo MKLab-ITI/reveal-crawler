@@ -37,10 +37,8 @@ public class CrawlQueueController {
     private final static Integer[] AVAILABLE_PORTS = {9995, 9997, 9999};
 
     public CrawlQueueController() {
-        // Sets up the Morphia Manager
-        MorphiaManager.setup(DB_NAME);
         // Creates a DAO object to persist submitted crawl requests
-        dao = new BasicDAO<CrawlRequest, ObjectId>(CrawlRequest.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), MorphiaManager.getDB().getName());
+        dao = new BasicDAO<CrawlRequest, ObjectId>(CrawlRequest.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), MorphiaManager.getDB(DB_NAME).getName());
         // Starts a polling thread to regularly check for empty slots
         poller = new Poller();
         poller.startPolling();

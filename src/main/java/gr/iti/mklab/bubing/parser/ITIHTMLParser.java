@@ -529,6 +529,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
                         item.setWebPageUrl(pageUri.toString());
                         item.setLastModifiedDate(new Date(con.getLastModified()));
                         item.setObjectId(new ObjectId());
+                        item.setCrawlDate(new Date());
 
                         try {
                             VisualIndexer.indexAndStore(image, item);

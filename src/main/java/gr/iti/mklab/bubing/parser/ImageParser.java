@@ -108,6 +108,7 @@ public class ImageParser<T> implements Parser<T> {
                 item.setWidth(image.getWidth());
                 item.setHeight(image.getHeight());
                 item.setWebPageUrl(uri.toString());
+                item.setCrawlDate(new Date());
 
                 try {
                     String lastModified = httpResponse.getFirstHeader("Last-Modified").getValue();

@@ -73,18 +73,17 @@ public class VisualIndexer {
     private VisualIndexer(String name) {
         try {
             initialize(name);
-            MorphiaManager.setup(name);
-            imageDAO = new MediaDAO<Image>(Image.class);
-            retrieveVideos();
+            imageDAO = new MediaDAO<Image>(Image.class, name);
+            retrieveVideos(name);
         } catch (Exception ex) {
             LOGGER.error("Error creating VisualIndexer " + ex);
         }
     }
 
-    private void retrieveVideos(){
+    private void retrieveVideos(String name){
         YoutubeRetriever r = new YoutubeRetriever();
         List<Video> results = r.retrieveKeywordsFeeds(keywords);
-        MediaDAO<Video> dao = new MediaDAO<Video>(Video.class);
+        MediaDAO<Video> dao = new MediaDAO<Video>(Video.class, name);
         for (Video v : results)
             dao.save(v);
     }
@@ -176,7 +175,7 @@ public class VisualIndexer {
             pca.loadPCAFromFile(pcaFile);
             ImageVectorization.setPcaProjector(pca);
         }
-        int maximumNumVectors = 10000;
+        int maximumNumVectors = 100000;
         int m2 = 64;
         int k_c = 256;
         int numCoarseCentroids = 8192;

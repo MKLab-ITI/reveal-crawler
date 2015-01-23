@@ -33,8 +33,8 @@ public class ItiAgent {
 
 
     public static void main(final String arg[]) throws Exception {
-        MorphiaManager.setup(CrawlQueueController.DB_NAME);
-        DAO<CrawlRequest, ObjectId> dao = new BasicDAO<CrawlRequest, ObjectId>(CrawlRequest.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), MorphiaManager.getDB().getName());
+        MorphiaManager.setup("127.0.0.1");
+        DAO<CrawlRequest, ObjectId> dao = new BasicDAO<CrawlRequest, ObjectId>(CrawlRequest.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), MorphiaManager.getDB(CrawlQueueController.DB_NAME).getName());
         List<CrawlRequest> waitingRequests = dao.getDatastore().find(CrawlRequest.class).filter("requestState", CrawlRequest.STATE.WAITING).order("creationDate").asList();
         if (waitingRequests.size() == 0) {
             System.out.println("No waiting requests in queue");
@@ -42,7 +42,7 @@ public class ItiAgent {
         } else {
             System.out.println("Keywords in request");
             CrawlRequest req = waitingRequests.get(0);
-            for(String k:req.keywords){
+            for (String k : req.keywords) {
                 System.out.println(k);
             }
             String crawlPath = req.crawlDataPath;
@@ -77,7 +77,7 @@ public class ItiAgent {
             req.requestState = CrawlRequest.STATE.RUNNING;
             req.lastStateChange = new Date();
             req.portNumber = port;
-            System.out.println("ItiAgent port number "+port);
+            System.out.println("ItiAgent port number " + port);
             dao.save(req);
 
             BaseConfiguration additional = new BaseConfiguration();
@@ -95,7 +95,10 @@ public class ItiAgent {
             new Agent(host, port, new RuntimeConfiguration(new StartupConfiguration(jsapResult.getString("properties"), additional)));
             req.requestState = CrawlRequest.STATE.FINISHED;
             req.lastStateChange = new Date();
-            dao.save(req);
+            try {
+                dao.save(req);
+            } catch (Exception e) {
+            }
             MorphiaManager.tearDown();
             System.exit(0); // Kills remaining FetchingThread instances, if any.
         }

@@ -11,10 +11,7 @@ import org.apache.log4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by kandreadou on 1/16/15.
@@ -39,8 +36,8 @@ public class YoutubeRetriever {
         set.add("merkel");
         set.add("intervention");
         List<Video> results = r.retrieveKeywordsFeeds(set);
-        MorphiaManager.setup("youtube");
-        MediaDAO<Video> dao = new MediaDAO<Video>(Video.class);
+        MorphiaManager.setup("127.0.0.1");
+        MediaDAO<Video> dao = new MediaDAO<Video>(Video.class, "youtube");
         for (Video v : results)
             dao.save(v);
         //SocialNetworkVideo v = (SocialNetworkVideo) dao.get(new ObjectId("54b7dc7c00b0d4e0cd2f784b"));
@@ -107,6 +104,7 @@ public class YoutubeRetriever {
 
                 for (VideoEntry video : videoFeed.getEntries()) {
                     Video videoItem = new SocialNetworkVideo(video);
+                    videoItem.setCrawlDate(new Date());
                     items.add(videoItem);
 
                     if (items.size() > RESULTS_THRESHOLD || numberOfRequests >= REQUEST_THRESHOLD || (System.currentTimeMillis() - currRunningTime) > MAX_RUNNING_TIME) {
