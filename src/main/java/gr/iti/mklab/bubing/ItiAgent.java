@@ -12,10 +12,12 @@ import it.unimi.di.law.bubing.Agent;
 import it.unimi.di.law.bubing.RuntimeConfiguration;
 import it.unimi.di.law.bubing.StartupConfiguration;
 import org.apache.commons.configuration.BaseConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.dao.DAO;
 import org.mongodb.morphia.dao.BasicDAO;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.Date;
@@ -93,11 +95,19 @@ public class ItiAgent {
             VisualIndexer.keywords = req.keywords;
             VisualIndexer.createInstance(collection);
             new Agent(host, port, new RuntimeConfiguration(new StartupConfiguration(jsapResult.getString("properties"), additional)));
-            req.requestState = CrawlRequest.STATE.FINISHED;
-            req.lastStateChange = new Date();
-            try {
+            req = dao.findOne("_id",req.id);
+            if(req.requestState == CrawlRequest.STATE.DELETING){
+                //Delete the request from the request DB
+                dao.delete(req);
+                //Delete the collection DB
+                MorphiaManager.getDB(req.collectionName).dropDatabase();
+                //Delete the crawl and index folders
+                FileUtils.deleteDirectory(new File(req.crawlDataPath));
+                FileUtils.deleteDirectory(new File("/home/iti-310/VisualIndex/data/" + req.collectionName));
+            }else{
+                req.requestState = CrawlRequest.STATE.FINISHED;
+                req.lastStateChange = new Date();
                 dao.save(req);
-            } catch (Exception e) {
             }
             MorphiaManager.tearDown();
             System.exit(0); // Kills remaining FetchingThread instances, if any.

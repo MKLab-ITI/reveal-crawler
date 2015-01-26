@@ -39,7 +39,7 @@ public class DAOTest {
     }
 
     public void testDAO(){
-        DAO<CrawlRequest, ObjectId> crawlDAO = new BasicDAO<CrawlRequest, ObjectId>(CrawlRequest.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), MorphiaManager.getDB().getName());
+        DAO<CrawlRequest, ObjectId> crawlDAO = new BasicDAO<CrawlRequest, ObjectId>(CrawlRequest.class, MorphiaManager.getMongoClient(), MorphiaManager.getMorphia(), MorphiaManager.getDB("").getName());
         CrawlRequest r = new CrawlRequest();
         r.collectionName = "new crawl";
         r.crawlDataPath = "/home/kandreadou/Documents/newcrawl/";

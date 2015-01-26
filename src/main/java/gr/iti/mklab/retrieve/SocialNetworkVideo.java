@@ -38,6 +38,7 @@ public class SocialNetworkVideo extends Video {
             return;
 
         YouTubeMediaGroup mediaGroup = v.getMediaGroup();
+        author = mediaGroup.getUploader();
         socialNetworkId = "Youtube#"+mediaGroup.getVideoId();
         networkName = "Youtube";
         //Timestamp of the creation of the video
