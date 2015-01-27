@@ -16,6 +16,8 @@ import org.apache.commons.io.FileUtils;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.dao.DAO;
 import org.mongodb.morphia.dao.BasicDAO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -32,7 +34,7 @@ public class ItiAgent {
 
     public final static BloomFilter<String> UNIQUE_IMAGE_URLS = BloomFilter.create(Funnels.stringFunnel(Charset.forName("UTF-8")), 100000);
     public static final String JMX_REMOTE_PORT_SYSTEM_PROPERTY = "com.sun.management.jmxremote.port";
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(ItiAgent.class);
 
     public static void main(final String arg[]) throws Exception {
         MorphiaManager.setup("127.0.0.1");
@@ -95,8 +97,12 @@ public class ItiAgent {
             VisualIndexer.keywords = req.keywords;
             VisualIndexer.createInstance(collection);
             new Agent(host, port, new RuntimeConfiguration(new StartupConfiguration(jsapResult.getString("properties"), additional)));
-            req = dao.findOne("_id",req.id);
-            if(req.requestState == CrawlRequest.STATE.DELETING){
+            LOGGER.warn("###### Agent has ended");
+            req = dao.findOne("_id", req.id);
+            if (req != null)
+                LOGGER.warn("###### Found request with id " + req.id + " " + req.requestState);
+            if (req.requestState == CrawlRequest.STATE.DELETING) {
+                LOGGER.warn("###### Delete");
                 //Delete the request from the request DB
                 dao.delete(req);
                 //Delete the collection DB
@@ -104,7 +110,8 @@ public class ItiAgent {
                 //Delete the crawl and index folders
                 FileUtils.deleteDirectory(new File(req.crawlDataPath));
                 FileUtils.deleteDirectory(new File("/home/iti-310/VisualIndex/data/" + req.collectionName));
-            }else{
+            } else {
+                LOGGER.warn("###### Cancel");
                 req.requestState = CrawlRequest.STATE.FINISHED;
                 req.lastStateChange = new Date();
                 dao.save(req);

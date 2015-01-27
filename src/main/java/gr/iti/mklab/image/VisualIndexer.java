@@ -81,11 +81,12 @@ public class VisualIndexer {
     }
 
     private void retrieveVideos(String name){
-        YoutubeRetriever r = new YoutubeRetriever();
-        List<Video> results = r.retrieveKeywordsFeeds(keywords);
+        YoutubeRetriever r = new YoutubeRetriever(name);
+        r.retrieve(keywords);
+        /*List<Video> results = r.retrieveKeywordsFeeds(keywords);
         MediaDAO<Video> dao = new MediaDAO<Video>(Video.class, name);
         for (Video v : results)
-            dao.save(v);
+            dao.save(v);*/
     }
 
     public void downloadIndexAndStore(Image item) {

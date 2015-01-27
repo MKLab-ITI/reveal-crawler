@@ -8,7 +8,9 @@ import com.google.gdata.data.youtube.VideoEntry;
 import com.google.gdata.data.youtube.YouTubeMediaContent;
 import com.google.gdata.data.youtube.YouTubeMediaGroup;
 import com.google.gdata.data.youtube.YtStatistics;
+import gr.iti.mklab.simmo.UserAccount;
 import gr.iti.mklab.simmo.items.Video;
+import org.mongodb.morphia.annotations.Embedded;
 import org.mongodb.morphia.annotations.Entity;
 
 import java.util.Date;
@@ -29,6 +31,9 @@ public class SocialNetworkVideo extends Video {
     protected long numViews;
 
     protected float rating;
+
+    @Embedded
+    public SocialNetworkUser user;
 
     public SocialNetworkVideo(){}
 
