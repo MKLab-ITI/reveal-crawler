@@ -1,6 +1,8 @@
 package gr.iti.mklab.image;
 
+import gr.iti.mklab.retrieve.SocialNetworkVideo;
 import gr.iti.mklab.retrieve.YoutubeRetriever;
+import gr.iti.mklab.retrieve.YoutubeV3;
 import gr.iti.mklab.simmo.items.Image;
 import gr.iti.mklab.simmo.items.Video;
 import gr.iti.mklab.simmo.morphia.MediaDAO;
@@ -36,6 +38,7 @@ import java.util.Set;
 public class VisualIndexer {
 
     private static MediaDAO<Image> imageDAO;
+    public static MediaDAO<SocialNetworkVideo> videoDAO;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VisualIndexer.class);
 
@@ -64,6 +67,8 @@ public class VisualIndexer {
 
     public static Set<String> keywords = new HashSet<String>();
 
+    private static YoutubeV3 r;
+
     public static synchronized VisualIndexer createInstance(String name) {
         if (uniqueInstance == null)
             uniqueInstance = new VisualIndexer(name);
@@ -74,19 +79,16 @@ public class VisualIndexer {
         try {
             initialize(name);
             imageDAO = new MediaDAO<Image>(Image.class, name);
-            retrieveVideos(name);
+            videoDAO = new MediaDAO<SocialNetworkVideo>(SocialNetworkVideo.class, name);
+            r = new YoutubeV3();
+            r.collect(keywords);
         } catch (Exception ex) {
             LOGGER.error("Error creating VisualIndexer " + ex);
         }
     }
 
-    private void retrieveVideos(String name){
-        YoutubeRetriever r = new YoutubeRetriever(name);
-        r.retrieve(keywords);
-        /*List<Video> results = r.retrieveKeywordsFeeds(keywords);
-        MediaDAO<Video> dao = new MediaDAO<Video>(Video.class, name);
-        for (Video v : results)
-            dao.save(v);*/
+    public static void stop() {
+        r.stop();
     }
 
     public void downloadIndexAndStore(Image item) {
@@ -97,10 +99,22 @@ public class VisualIndexer {
         } catch (Exception ex) {
             System.out.println("Exception on download " + ex);
         }
-
     }
 
-    public static void indexAndStore(BufferedImage im, Image obj) throws Exception {
+    public static synchronized void indexAndStore(SocialNetworkVideo obj) throws Exception {
+        BufferedImage im = downloadImage(obj.getThumbnail());
+        ImageVectorization imvec = new ImageVectorization(obj.getObjectId().toString(), im, targetLengthMax, maxNumPixels);
+        ImageVectorizationResult result = imvec.call();
+        if (StringUtils.isEmpty(result.getExceptionMessage())) {
+            String id = result.getImageName();
+            double[] vector = result.getImageVector();
+            //System.out.println("Vectorization Result: " + vector.length + " " + id);
+            if (index.indexVector(id, vector))
+                videoDAO.save(obj);
+        }
+    }
+
+    public static synchronized void indexAndStore(BufferedImage im, Image obj) throws Exception {
         ImageVectorization imvec = new ImageVectorization(obj.getObjectId().toString(), im, targetLengthMax, maxNumPixels);
         ImageVectorizationResult result = imvec.call();
         if (StringUtils.isEmpty(result.getExceptionMessage())) {
@@ -112,7 +126,7 @@ public class VisualIndexer {
         }
     }
 
-    private BufferedImage downloadImage(String imageUrl) throws Exception {
+    private static BufferedImage downloadImage(String imageUrl) throws Exception {
         BufferedImage image = null;
         InputStream in = null;
         try { // first try reading with the default class
@@ -182,7 +196,7 @@ public class VisualIndexer {
         int numCoarseCentroids = 8192;
         String coarseQuantizerFile2 = LEARNING_FOLDER + "qcoarse_1024d_8192k.csv";
         String productQuantizerFile2 = LEARNING_FOLDER + "pq_1024_64x8_rp_ivf_8192k.csv";
-        index = new IVFPQ(targetLengthMax, maximumNumVectors, false, INDEX_FOLDER+name+'/', m2, k_c, PQ.TransformationType.RandomPermutation, numCoarseCentroids, true, 0);
+        index = new IVFPQ(targetLengthMax, maximumNumVectors, false, INDEX_FOLDER + name + '/', m2, k_c, PQ.TransformationType.RandomPermutation, numCoarseCentroids, true, 0);
         index.loadCoarseQuantizer(coarseQuantizerFile2);
         index.loadProductQuantizer(productQuantizerFile2);
         int w = 64; // larger values will improve results/increase seach time

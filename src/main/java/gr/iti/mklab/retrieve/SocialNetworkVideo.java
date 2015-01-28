@@ -1,5 +1,10 @@
 package gr.iti.mklab.retrieve;
 
+import com.google.api.gbase.client.Thumbnail;
+import com.google.api.services.youtube.model.Channel;
+import com.google.api.services.youtube.model.ThumbnailDetails;
+import com.google.api.services.youtube.model.VideoContentDetails;
+import com.google.api.services.youtube.model.VideoStatistics;
 import com.google.gdata.data.extensions.Rating;
 import com.google.gdata.data.media.mediarss.MediaDescription;
 import com.google.gdata.data.media.mediarss.MediaPlayer;
@@ -36,6 +41,31 @@ public class SocialNetworkVideo extends Video {
     public SocialNetworkUser user;
 
     public SocialNetworkVideo(){}
+
+    public SocialNetworkVideo(com.google.api.services.youtube.model.Video v, Channel c) {
+        socialNetworkId = "Youtube#"+v.getId();
+        networkName = "Youtube";
+        title = v.getSnippet().getTitle();
+        description = v.getSnippet().getDescription();
+        creationDate = new Date(v.getSnippet().getPublishedAt().getValue());
+        crawlDate = new Date();
+        VideoStatistics statistics = v.getStatistics();
+        if(statistics!=null){
+            numLikes = statistics.getFavoriteCount().longValue();
+            numViews = statistics.getViewCount().longValue();
+        }
+        VideoContentDetails details = v.getContentDetails();
+        if(details!=null){
+            quality = details.getDefinition();
+        }
+        com.google.api.services.youtube.model.Thumbnail t = v.getSnippet().getThumbnails().getHigh();
+        setThumbnail(t.getUrl());
+        setWidth(t.getWidth().intValue());
+        setHeight(t.getHeight().intValue());
+        url =  "https://www.youtube.com/watch?v=" + v.getId();
+
+        user = new SocialNetworkUser(c);
+    }
 
     public SocialNetworkVideo(VideoEntry v) {
 

@@ -142,6 +142,22 @@
             <artifactId>core</artifactId>
             <version>1.47.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-youtube</artifactId>
+            <version>v3-rev125-1.19.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.oauth-client</groupId>
+            <artifactId>google-oauth-client</artifactId>
+            <version>1.19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.oauth-client</groupId>
+            <artifactId>google-oauth-client-java6</artifactId>
+            <version>1.19.0</version>
+        </dependency>
+
 
     </dependencies>
 

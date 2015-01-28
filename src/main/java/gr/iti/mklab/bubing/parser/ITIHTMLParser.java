@@ -60,15 +60,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.htmlparser.jericho.CharacterReference;
-import net.htmlparser.jericho.EndTag;
-import net.htmlparser.jericho.EndTagType;
-import net.htmlparser.jericho.HTMLElementName;
-import net.htmlparser.jericho.HTMLElements;
-import net.htmlparser.jericho.Segment;
-import net.htmlparser.jericho.StartTag;
-import net.htmlparser.jericho.StartTagType;
-import net.htmlparser.jericho.StreamedSource;
+import net.htmlparser.jericho.*;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.collections.CollectionUtils;
@@ -78,6 +70,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClients;
@@ -342,7 +335,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
     /**
      * The character buffer. It is set up at construction time, but it can be changed later.
      */
-    protected final char[] buffer;
+    //protected final char[] buffer;
     /**
      * The charset we guessed for the last response.
      */
@@ -388,7 +381,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
      * @param bufferSize               the fixed size of the internal buffer; if zero, the buffer will be dynamic.
      */
     public ITIHTMLParser(final HashFunction hashFunction, final TextProcessor<T> textProcessor, final boolean crossAuthorityDuplicates, final int bufferSize) {
-        buffer = bufferSize != 0 ? new char[bufferSize] : null;
+        //buffer = bufferSize != 0 ? new char[bufferSize] : null;
         digestAppendable = hashFunction == null ? null : new DigestAppendable(hashFunction);
         this.textProcessor = textProcessor;
         this.crossAuthorityDuplicates = crossAuthorityDuplicates;
@@ -550,7 +543,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
         final HttpEntity entity = httpResponse.getEntity();
 
         boolean keywordFound = false;
-        String htmlText = EntityUtils.toString(entity);
+        /*String htmlText = EntityUtils.toString(entity);
         //LOGGER.info("Keywords "+ ArrayUtils.toString(keywords.toArray()));
         for (String keyword:keywords){
             keywordFound |= htmlText.contains(keyword);
@@ -558,7 +551,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
         if(!keywordFound){
             //LOGGER.info("*******************************Page "+uri.toString()+"does not contain keyword");
             return null;
-        }
+        }*/
 
         // TODO: check if it will make sense to use getValue() of entity
         // Try to guess using headers
@@ -619,8 +612,8 @@ public class ITIHTMLParser<T> implements Parser<T> {
         }
 
         @SuppressWarnings("resource")
-        final StreamedSource streamedSource = new StreamedSource(new InputStreamReader(contentStream, charset));
-        if (buffer != null) streamedSource.setBuffer(buffer);
+        final Source streamedSource = new Source(new InputStreamReader(contentStream, charset));
+        //if (buffer != null) streamedSource.setBuffer(buffer);
         if (digestAppendable != null) digestAppendable.init(crossAuthorityDuplicates ? null : uri);
         URI base = uri;
 
@@ -633,6 +626,40 @@ public class ITIHTMLParser<T> implements Parser<T> {
                     final StartTag startTag = (StartTag) segment;
                     if (startTag.getTagType() != StartTagType.NORMAL) continue;
                     final String name = startTag.getName();
+
+                    // Break if keywords not in title
+                    if ((name == HTMLElementName.TITLE) && !startTag.isSyntacticalEmptyElementTag()) {
+                        if (startTag.getElement() != null && startTag.getElement().getContent() != null) {
+                            String title = startTag.getElement().getContent().toString();
+                            LOGGER.debug("Page url " + uri + " title " + title);
+                            int threshold;
+                            switch (keywords.size()){
+                                case 0:
+                                    threshold = 0;
+                                    break;
+                                case 1:
+                                case 2:
+                                    threshold = 1;
+                                    break;
+                                case 3:
+                                case 4:
+                                    threshold = 2;
+                                    break;
+                                default:
+                                    threshold = 3;
+                                    break;
+                            }
+                            int found = 0;
+                            for (String keyword : keywords) {
+                                if (title.toLowerCase().contains(keyword.toLowerCase()))
+                                    found++;
+                            }
+                            if(found>=threshold)
+                                keywordFound = true;
+                            LOGGER.debug("Keyword found " + keywordFound);
+                        }
+                    }
+
                     if ((name == HTMLElementName.STYLE || name == HTMLElementName.SCRIPT) && !startTag.isSyntacticalEmptyElementTag())
                         inSpecialText++;
 
@@ -643,15 +670,15 @@ public class ITIHTMLParser<T> implements Parser<T> {
 
                     // IFRAME or FRAME + SRC
                     if (name == HTMLElementName.IFRAME || name == HTMLElementName.FRAME || name == HTMLElementName.EMBED)
-                        process(linkReceiver, base, startTag.getAttributeValue("src"), startTag.getAttributeValue("name"), true);
-                    else if (name == HTMLElementName.IMG) {
+                        process(linkReceiver, base, startTag.getAttributeValue("src"), startTag.getAttributeValue("name"), keywordFound);
+                    else if (name == HTMLElementName.IMG && keywordFound) {
                         processImageURL(uri, base, startTag.getAttributeValue("src"), startTag.getAttributeValue("alt"));
                     } else if (name == HTMLElementName.SCRIPT)
                         process(linkReceiver, base, startTag.getAttributeValue("src"), null, false);
                     else if (name == HTMLElementName.OBJECT)
-                        process(linkReceiver, base, startTag.getAttributeValue("data"), startTag.getAttributeValue("name"), true);
+                        process(linkReceiver, base, startTag.getAttributeValue("data"), startTag.getAttributeValue("name"), keywordFound);
                     else if (name == HTMLElementName.A || name == HTMLElementName.AREA || name == HTMLElementName.LINK)
-                        process(linkReceiver, base, startTag.getAttributeValue("href"), null, true);
+                        process(linkReceiver, base, startTag.getAttributeValue("href"), null, keywordFound);
                     else if (name == HTMLElementName.BASE) {
                         String s = startTag.getAttributeValue("href");
                         if (s != null) {
@@ -842,7 +869,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
 
     @Override
     public ITIHTMLParser<T> clone() {
-        return new ITIHTMLParser<T>(digestAppendable == null ? null : digestAppendable.hashFunction, textProcessor == null ? null : textProcessor.copy(), crossAuthorityDuplicates, buffer.length);
+        return new ITIHTMLParser<T>(digestAppendable == null ? null : digestAppendable.hashFunction, textProcessor == null ? null : textProcessor.copy(), crossAuthorityDuplicates, CHAR_BUFFER_SIZE);
     }
 
     @Override
@@ -857,6 +884,7 @@ public class ITIHTMLParser<T> implements Parser<T> {
 
     public static void main(String arg[]) throws IllegalArgumentException, IOException, URISyntaxException, JSAPException, NoSuchAlgorithmException {
 
+        keywords.add("cameron");
         final SimpleJSAP jsap = new SimpleJSAP(ITIHTMLParser.class.getName(), "Produce the digest of a page: the page is downloaded or passed as argument by specifying a file",
                 new Parameter[]{
                         new UnflaggedOption("url", JSAP.STRING_PARSER, JSAP.REQUIRED, "The url of the page."),
