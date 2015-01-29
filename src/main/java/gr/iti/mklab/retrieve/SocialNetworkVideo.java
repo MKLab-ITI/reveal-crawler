@@ -63,6 +63,7 @@ public class SocialNetworkVideo extends Video {
         setWidth(t.getWidth().intValue());
         setHeight(t.getHeight().intValue());
         url =  "https://www.youtube.com/watch?v=" + v.getId();
+        webPageUrl = url;
 
         user = new SocialNetworkUser(c);
     }

@@ -39,6 +39,8 @@ public class YoutubeV3 {
 
     private boolean stop = false;
 
+    private Thread thread;
+
     //private MediaDAO<SocialNetworkVideo> videoDAO;
 
     public static void main(String[] args) throws Exception {
@@ -65,18 +67,22 @@ public class YoutubeV3 {
     }
 
     public void stop() {
+
         stop = true;
+        if(thread!=null && thread.isAlive())
+            thread.interrupt();
     }
 
     public void collect(final Set<String> keywords) {
 
-        new Thread(new Runnable() {
+        thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 get(keywords);
                 MorphiaManager.tearDown();
             }
-        }).start();
+        });
+        thread.start();
     }
 
     private void get(Set<String> keywords) {

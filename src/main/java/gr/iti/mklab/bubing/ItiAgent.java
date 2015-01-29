@@ -98,6 +98,7 @@ public class ItiAgent {
             VisualIndexer.createInstance(collection);
             new Agent(host, port, new RuntimeConfiguration(new StartupConfiguration(jsapResult.getString("properties"), additional)));
             LOGGER.warn("###### Agent has ended");
+            VisualIndexer.stop();
             req = dao.findOne("_id", req.id);
             if (req != null)
                 LOGGER.warn("###### Found request with id " + req.id + " " + req.requestState);
